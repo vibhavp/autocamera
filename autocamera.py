@@ -53,32 +53,40 @@ def event_push(player):
     # Only push if the event didn't occur within 5 seconds of the last
     # event
     if (event_queue == [] or int(time.time()) - event_queue[0][1] > 5):
+        # The event occurs at current_time + stv_delay
         event_queue.insert(0, (player, int(time.time() + stv_delay)))
 
 def send_events():
+    # Connect to ExternalExtensions' websocket
+    print("Connecting to ExternalExtensions...")
     ws = create_connection("ws://127.0.0.1:%s" % websockets_port)
-
+    print("Done.")
+    
     while True:
+        # Wait until the event queue isn't empty
         while (event_queue == []):
             if thread_exit:
                 exit(0)
             time.sleep(1)
 
-        # Sleep until 5 seconds are left for the event to happen
         global_lock.acquire(True)
         head_time = event_queue[len(event_queue) - 1][1]
         global_lock.release()
-        time.sleep(int(time.time()) - head_time + spec_on)
+
+        # Sleep for (time_when_event_happens - current_time + spec_on) seconds
+        time.sleep(head_time + spec_on)
 
         # Get the player to spec
         global_lock.acquire(True)
-        head_player = event_queue[len(event_queue) - 1][0]
-        event_queue.pop()
+        head_player = event_queue.pop()
         global_lock.release()
+        # Send request to ExternalExtensions to execute the command
+        # spec_player <player>
         request = "{ \"type\": \"command\", \"comand\": \"spec_player %s\"}" % head_player
         ws.send(request)
 
 def main():
+    
     feed_context = zmq.Context()
     feed_socket = feed_context.socket(zmq.PAIR)
     feed_socket.bind("tcp://*:%s" % feed_port)
@@ -87,6 +95,7 @@ def main():
     t.start()
 
     while True:
+        # Get name of player to observe
         name = feed_socket.recv().decode("utf-8")
         if name == "exit":
             global thread_exit
