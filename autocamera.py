@@ -20,6 +20,7 @@
 
 #!/usr/bin/env python3
 import zmq
+from websocket import create_connection
 import time
 import threading
 import pyautogui
@@ -27,9 +28,8 @@ import pyautogui
 ###################################################################
 # The port on which autocamera.py will listen
 feed_port = "5555"
-# The port on which the autocamera source client plugin will listen.
-# Make sure it's equal to the convar autocamera_listener_port
-hl2_port  = "5556"
+# The port on which ExternelExtensions with listen
+websockets_port  = "2006"
 # The STV delay, in seconds     
 stv_delay = 90
 # Spectate player when these much seconds are left
@@ -56,35 +56,27 @@ def event_push(player):
         event_queue.insert(0, (player, int(time.time() + stv_delay)))
 
 def send_events():
-    hl2_context = zmq.Context()
-    global hl2_socket
-    hl2_socket = hl2_context.socket(zmq.PAIR)
-    hl2_socket.connect("tcp://127.0.0.1:%s" % hl2_port)
+    ws = create_connection("ws://127.0.0.1:%s" % websockets_port)
 
     while True:
         while (event_queue == []):
             if thread_exit:
-                hl2_socket.disconnect("tcp://127.0.0.1:%s" % hl2_port)
                 exit(0)
-
             time.sleep(1)
 
         # Sleep until 5 seconds are left for the event to happen
         global_lock.acquire(True)
-        pdb.set_trace()
         head_time = event_queue[len(event_queue) - 1][1]
         global_lock.release()
         time.sleep(int(time.time()) - head_time + spec_on)
 
-        # Notify hl2 of the event
+        # Get the player to spec
         global_lock.acquire(True)
         head_player = event_queue[len(event_queue) - 1][0]
-        hl2_socket.send_string(head_player)
         event_queue.pop()
         global_lock.release()
-        # wait for ACK, send the bind for autocamera_spec_player to hl2.exe
-        hl2_socket.recv()
-        pyautogui.press(camera_bind)
+        request = "{ \"type\": \"command\", \"comand\": \"spec_player %s\"}" % head_player
+        ws.send(request)
 
 def main():
     feed_context = zmq.Context()
