@@ -5,9 +5,9 @@ AutoCamera
 
 AutoCamera listens to players on a TCP connection, and changes the spectator cam
 accordingly. It is supposed to sit on a secondary camera, and is meant to help view
-**multiple perspectives** of in-game events. **Primary Camerawork is still supposed to
-be done by humans, and in no way is AutoCamera a substitute for that** The secondary
-camera then can be viewed on a split-screen.
+**multiple perspectives** of in-game events. The secondary camera then can be viewed
+on a split-screen. **Primary Camerawork is still supposed to be done by humans, and
+in no way is AutoCamera a substitute for that** 
 
 Requirements
 ------------
