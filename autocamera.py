@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2015 Vibhav Pant <vibhavp@gmail.com>
 
 # Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,12 +19,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 # DEALINGS IN THE SOFTWARE.
 
-#!/usr/bin/env python3
 import zmq
 from websocket import create_connection
 import time
 import threading
-import pyautogui
 
 ###################################################################
 # The port on which autocamera.py will listen
@@ -34,8 +33,6 @@ websockets_port  = "2006"
 stv_delay = 90
 # Spectate player when these much seconds are left
 spec_on = 5
-# bind configured in TF2 to autocamera_spec_player
-camera_bind = 'k'
 ###################################################################
 
 # Stuff after this point shouldn't usually bother you if you're the
@@ -56,49 +53,55 @@ def event_push(player):
         # The event occurs at current_time + stv_delay
         event_queue.insert(0, (player, int(time.time() + stv_delay)))
 
-def send_events():
-    # Connect to ExternalExtensions' websocket
-    print("Connecting to ExternalExtensions...")
-    ws = create_connection("ws://127.0.0.1:%s" % websockets_port)
-    print("Done.")
-    
+def send_events(wsocket):    
+
     while True:
         # Wait until the event queue isn't empty
         while (event_queue == []):
             if thread_exit:
-                exit(0)
+                exit(1)
             time.sleep(1)
 
         global_lock.acquire(True)
-        head_time = event_queue[len(event_queue) - 1][1]
+        event = event_queue.pop()
         global_lock.release()
+        
+        player, time = event[0], event[1]
 
         # Sleep for (time_when_event_happens - current_time + spec_on) seconds
-        time.sleep(head_time + spec_on)
-
-        # Get the player to spec
-        global_lock.acquire(True)
-        head_player = event_queue.pop()
-        global_lock.release()
+        time.sleep(time + spec_on)
+        
         # Send request to ExternalExtensions to execute the command
         # spec_player <player>
-        request = "{ \"type\": \"command\", \"comand\": \"spec_player %s\"}" % head_player
-        ws.send(request)
+        request = "{ \"type\": \"command\", \"comand\": \"spec_player %s\"}" % player
+        wsocket.send(request)
 
 def main():
     
+    global thread_exit
     feed_context = zmq.Context()
     feed_socket = feed_context.socket(zmq.PAIR)
     feed_socket.bind("tcp://*:%s" % feed_port)
 
-    t = threading.Thread(target=send_events)
-    t.start()
+    # Connect to ExternalExtensions' websocket
+    print("Connecting to ExternalExtensions...",)
+    try:
+        ws = create_connection("ws://127.0.0.1:%s" % websockets_port)
+    except ConnectionRefusedError:
+        print("Connection to ExternalExtensions refused.")
+    finally:
+        print("Connection failed. Exiting")
+        exit(1)
 
+    print("Connected.")
+
+    t = threading.Thread(target=send_events, args=ws)
+    t.start()
+    
     while True:
         # Get name of player to observe
         name = feed_socket.recv().decode("utf-8")
         if name == "exit":
-            global thread_exit
             thread_exit = True
             feed_socket.disconnect("tcp://*:%s" % feed_port)
             exit(0)
