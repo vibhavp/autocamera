@@ -8,7 +8,7 @@ a secondary camera, and is meant to help view
 on a split-screen. **Primary Camerawork is still supposed to be done by humans, and
 in no way is AutoCamera a substitute for that**
 
-For you frag video/instant replay needs, AutoCamera can also automate demos recordings,
+For your frag video/instant replay needs, AutoCamera can also automate demos recordings,
 with the relevant config. Demos can start and stop recording at a set time, and are
 saved with the format `player_<event_type>_hour_minutes_seconds`.
 
