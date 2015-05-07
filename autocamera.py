@@ -49,9 +49,11 @@ spec_player = "player_name"
 url = "http://live.fakkelbrigade.eu/pages/streamer_stats.json?match_id="
 # Events to spectate
 event_checks = [lambda e: e["event_type"] == "TF2LineParser::Events::Airshot",
-                lambda e: e["event_type"] == "TF2LineParser::Events::MedicDeath",
-                # Uncomment to enable ubersaw kills
-                # lambda e: e["weapon"] == "ubersaw",
+                # Uncomment to spectate medic deaths
+                #lambda e: e["event_type"] == "TF2LineParser::Events::MedicDeath",
+
+                # Uncomment to spectate ubersaw kills
+                #lambda e: e["weapon"] == "ubersaw",
                 lambda e: e["customkill"] == "backstab",
                 lambda e: e["customkill"] == "headshot"]
 ###################################################################
