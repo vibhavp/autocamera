@@ -1,6 +1,8 @@
 AutoCamera
 =========
 
+[![Join the chat at https://gitter.im/vibhavp/autocamera](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/vibhavp/autocamera?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 AutoCamera checks [Arie's live TF2 feed](https://github.com/Arie/tf2_live_stats) for big plays
 , and changes the spectator cam accordingly. It is supposed to sit on
 a secondary camera, and is meant to help view
